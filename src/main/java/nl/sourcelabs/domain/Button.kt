@@ -19,6 +19,9 @@ enum class Button(val note: Int) {
     BUTTON16(51);
 
     companion object {
-        fun getByNote(note: Int) = Button.values().first { it.note == note }
+        // Retrieve the button associated with the provided midi note data or NoSuchElementException
+        fun getByNote(note: Int) = Button.values().first { 
+            it.note == note 
+        }
     }
 }

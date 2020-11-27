@@ -1,24 +1,13 @@
 package nl.sourcelabs.device
 
 import nl.sourcelabs.domain.Button
-import nl.sourcelabs.domain.ButtonAction
 import nl.sourcelabs.domain.ButtonConfiguration
-import nl.sourcelabs.domain.ButtonListener
 import nl.sourcelabs.domain.ButtonState
 import nl.sourcelabs.domain.LedColor
-import nl.sourcelabs.domain.LedColor.BLUE
-import nl.sourcelabs.domain.LedColor.BRIGHT_LIME
 import nl.sourcelabs.domain.LedColor.OFF
-import java.awt.Desktop
-import java.net.URI
-import java.util.Date
-import java.util.Timer
-import java.util.TimerTask
+import java.util.*
 import java.util.concurrent.Executors
-import javax.sound.midi.MidiMessage
-import javax.sound.midi.MidiSystem
-import javax.sound.midi.Receiver
-import javax.sound.midi.ShortMessage
+import javax.sound.midi.*
 
 private const val MIDI_FIGHTER_DEVICE_NAME = "Midi Fighter Spectra"
 private val timer = Timer()
@@ -27,7 +16,7 @@ private val executor = Executors.newCachedThreadPool()
 class MidiFighter {
 
     init {
-        val midiFighter = this
+       val midiFighter = this
         Runtime.getRuntime().addShutdownHook(object : Thread() {
             override fun run() {
                 midiFighter.allOff()
@@ -37,26 +26,9 @@ class MidiFighter {
         })
     }
 
-    private val receiver = MidiSystem.getMidiDevice(MidiSystem.getMidiDeviceInfo().first {
-        it.name == MIDI_FIGHTER_DEVICE_NAME && try {
-            MidiSystem.getMidiDevice(it).receiver; true
-        } catch (exception: Exception) {
-            false
-        }
-    }).also {
-        it.open()
-    }.receiver
+    private val receiver = getReceiver(MIDI_FIGHTER_DEVICE_NAME)
 
-    private val transmitter = MidiSystem.getMidiDevice(MidiSystem.getMidiDeviceInfo().first {
-        it.name == MIDI_FIGHTER_DEVICE_NAME && try {
-            MidiSystem.getMidiDevice(it).transmitter; true
-        } catch (exception: Exception) {
-            false
-        }
-    }).also {
-        it.open()
-        allOff()
-    }.transmitter.apply {
+    private val transmitter = getTransmitter(MIDI_FIGHTER_DEVICE_NAME).apply {
         receiver = object : Receiver {
             override fun close() {
             }
@@ -127,24 +99,14 @@ class MidiFighter {
     }
 }
 
-fun main() {
-    MidiFighter().apply {
-        Button.values().forEach {
-            addButtonConfiguration(ButtonConfiguration(
-                button = it,
-                activeState = ButtonState(BRIGHT_LIME),
-                processingState = ButtonState(BLUE, true),
-                defaultState = ButtonState(OFF),
-                action = ButtonAction(20000) {
-                    Thread.sleep((1000L..4000L).random())
-                    listOf(true, false).random()
-                },
-                listener = ButtonListener(
-                    release = {
-                        Desktop.getDesktop().browse(URI("https://api.bol.com/retailer/public"))
-                    }
-                )
-            ))
-        }
-    }
-}
+private fun getReceiver(deviceName: String) = MidiSystem.getMidiDevice(MidiSystem.getMidiDeviceInfo().first {
+    it.name == deviceName && MidiSystem.getMidiDevice(it).maxReceivers == -1
+}).also {
+    it.open()
+}.receiver
+
+private fun getTransmitter(deviceName: String) = MidiSystem.getMidiDevice(MidiSystem.getMidiDeviceInfo().first {
+    it.name == deviceName && MidiSystem.getMidiDevice(it).maxTransmitters == -1
+}).also {
+    it.open()
+}.transmitter

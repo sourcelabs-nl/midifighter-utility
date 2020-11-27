@@ -18,14 +18,11 @@ data class ButtonConfiguration(
 )
 
 class ButtonListener(private val press: (() -> Unit)? = null, private val release: (() -> Unit)? = null) {
-
     fun onPress() = press?.invoke()
-
     fun onRelease() = release?.invoke()
 }
 
 class ButtonAction(val interval: Long = 5000, private val action: () -> Boolean) {
-
     fun executeAction(): Boolean {
         return try {
             action()
